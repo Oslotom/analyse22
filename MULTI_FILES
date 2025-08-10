@@ -1,0 +1,96 @@
+// lib/types.ts
+export type Company = {
+  // ... other fields
+  kpis: {
+    marketShare?: number;
+    growthRate?: number;
+    riskScore?: number;
+    revenueCAGR?: number;
+    yoyRevenueGrowth?: number;
+    profitMargin?: number;
+    ebitdaMargin?: number;
+    debtToEquity?: number;
+    employeesCAGR?: number;
+  };
+  dataSources?: DataSources;
+};
+
+// app/api/company/[orgnr]/route.ts
+import { computeKPIs } from "@/lib/kpis";
+// ... other imports
+
+export async function GET(request: Request) {
+  // ... existing code
+  const financials = await getFinancials(orgnr);
+  const financialsSource = getFinancialsSource(financials);
+  const kpis = computeKPIs(financials);
+
+  return new Response(JSON.stringify({
+    company: {
+      // ... other fields
+      kpis: {
+        ...kpis,
+      },
+    },
+  }));
+}
+
+// components/company-overview.tsx
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+// ... other imports
+
+export function CompanyOverview({ company }: { company: Company }) {
+  return (
+    <div>
+      {/* Header block */}
+      <div className="container">
+        <h1>{company.name}</h1>
+        {/* Header badges area */}
+        <div className="badges">
+          {/* Growth badge */}
+          <div className="badge">{company.kpis.growthRate}%</div>
+        </div>
+      </div>
+
+      {/* KPI card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Key metrics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              { label: "Revenue CAGR", value: company.kpis.revenueCAGR, suffix: "%" },
+              { label: "YoY growth", value: company.kpis.yoyRevenueGrowth, suffix: "%" },
+              { label: "Profit margin", value: company.kpis.profitMargin, suffix: "%" },
+              { label: "EBITDA margin", value: company.kpis.ebitdaMargin, suffix: "%" },
+              { label: "Debt / Equity", value: company.kpis.debtToEquity },
+              { label: "Employees CAGR", value: company.kpis.employeesCAGR, suffix: "%" },
+            ]
+              .filter((m) => m.value !== undefined && m.value !== null)
+              .map((m, i) => (
+                <div key={i} className="rounded-md border p-4">
+                  <div className="text-sm text-muted-foreground">{m.label}</div>
+                  <div className="mt-1 text-2xl font-semibold">
+                    {typeof m.value === "number"
+                      ? `${m.value}${m.suffix ?? ""}`
+                      : "-"}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Business Intelligence Summary card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Business Intelligence Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* ... existing code */}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

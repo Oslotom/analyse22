@@ -1,0 +1,76 @@
+import { NextResponse } from "next/server"
+
+type BrregEnhet = {
+organisasjonsnummer?: string
+navn?: string
+naeringskode1?: { kode?: string; beskrivelse?: string }
+forretningsadresse?: {
+  adresse?: string[]
+  postnummer?: string
+  poststed?: string
+  kommune?: string
+  kommunenummer?: string
+  land?: string
+}
+}
+
+export async function GET(req: Request) {
+const { searchParams } = new URL(req.url)
+const q = (searchParams.get("q") || "").trim()
+const page = Number(searchParams.get("page") || "0")
+if (!q) return NextResponse.json({ results: [] })
+
+try {
+  const digits = q.replace(/\D/g, "")
+  // If valid Norwegian orgnr (9 digits, mod11), fetch specific entity:
+  if (digits.length === 9 && isValidOrgnr(digits)) {
+    const res = await fetch(`https://data.brreg.no/enhetsregisteret/api/enheter/${digits}`, {
+      headers: { accept: "application/json" },
+      next: { revalidate: 300 },
+    })
+    if (res.ok) {
+      const d: BrregEnhet = await res.json()
+      const item = mapToResult(d)
+      return NextResponse.json({ results: item ? [item] : [] })
+    }
+    // If not found, continue to name search
+  }
+
+  // Name search — limited to 8 results
+  const res = await fetch(
+    `https://data.brreg.no/enhetsregisteret/api/enheter?size=8&page=${page}&navn=${encodeURIComponent(q)}`,
+    { headers: { accept: "application/json" }, next: { revalidate: 300 } },
+  )
+
+  if (!res.ok) return NextResponse.json({ results: [] }, { status: 200 })
+  const data = await res.json()
+  const enheter: BrregEnhet[] = data?._embedded?.enheter ?? []
+  const results = enheter.map(mapToResult).filter(Boolean)
+  return NextResponse.json({ results })
+} catch {
+  return NextResponse.json({ results: [] })
+}
+}
+
+function mapToResult(d: BrregEnhet) {
+if (!d?.organisasjonsnummer || !d?.navn) return null
+const city = d.forretningsadresse?.poststed || d.forretningsadresse?.kommune || ""
+const industry = d.naeringskode1?.beskrivelse || d.naeringskode1?.kode || ""
+return {
+  orgnr: String(d.organisasjonsnummer),
+  name: d.navn,
+  industry,
+  city,
+}
+}
+
+// Norwegian organization number Mod11 validation
+function isValidOrgnr(orgnr: string) {
+if (!/^[0-9]{9}$/.test(orgnr)) return false
+const weights = [3, 2, 7, 6, 5, 4, 3, 2]
+const sum = weights.reduce((acc, w, i) => acc + Number(orgnr[i]) * w, 0)
+const remainder = sum % 11
+const ctrl = remainder === 0 ? 0 : 11 - remainder
+if (ctrl === 10) return false
+return ctrl === Number(orgnr[8])
+}
