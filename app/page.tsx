@@ -10,26 +10,41 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-[100svh]">
-      <header className="border-b">
+      <header className="border-b border-primary-foreground/20 bg-gradient-to-r from-primary via-purple-600 to-pink-600 text-primary-foreground">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
           <Link href="/" className="font-semibold">
             Norwegian Business Reports
           </Link>
           <div className="flex items-center gap-2">
             <Link href="/compare">
-              <Button variant="outline">Compare</Button>
+              <Button
+                variant="outline"
+                className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                Compare
+              </Button>
             </Link>
             <Link href="/help">
-              <Button variant="outline">Help</Button>
+              <Button
+                variant="outline"
+                className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                Help
+              </Button>
             </Link>
             <a href="https://w2.brreg.no" target="_blank" rel="noreferrer">
-              <Button variant="outline">Brønnøysund</Button>
+              <Button
+                variant="outline"
+                className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                Brønnøysund
+              </Button>
             </a>
           </div>
         </div>
       </header>
 
-      <section className="bg-muted/30">
+      <section className="bg-gradient-to-r from-primary/10 via-blue-100 to-purple-100">
         <div className="mx-auto max-w-6xl px-4 py-12">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-3xl font-semibold">Find Norwegian company insights</h1>
